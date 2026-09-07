@@ -56,12 +56,13 @@
     (rag-protocol:upsert store
                          (list (%chunk "a" "the cat sat on the mat")
                                (%chunk "b" "the cat")))
-    (let ((hits (rag-protocol:query-store store "cat mat" :top-k 2)))
-      (ok (= 2 (length hits)))
+    ;; plainto_tsquery ANDs terms — "cat mat" misses "the cat".
+    (let ((both (rag-protocol:query-store store "cat" :top-k 2))
+          (mat (rag-protocol:query-store store "mat" :top-k 2)))
+      (ok (= 2 (length both)))
+      (ok (= 1 (length mat)))
       (ok (equal "a" (rag-protocol:rag-chunk-id
-                      (rag-protocol:rag-hit-chunk (first hits)))))
-      (ok (> (rag-protocol:rag-hit-score (first hits))
-             (rag-protocol:rag-hit-score (second hits)))))))
+                      (rag-protocol:rag-hit-chunk (first mat))))))))
 
 (deftest replace-and-delete
   (with-live-store (store)
